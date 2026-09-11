@@ -2442,7 +2442,7 @@ function showSavedCertificate(){
   document.getElementById('certActions').classList.remove('hidden');
   const status=document.getElementById('emailStatus');
   status.style.color=c.emailSent?'#2F7A4E':'var(--steel)';
-  status.textContent=c.emailSent ? 'Completion record accepted by FormSubmit for '+CERT_EMAIL+'.' : '';
+  status.textContent=c.emailSent ? '' : '';
   const hint=document.getElementById('certHint');
   hint.style.color='var(--steel)';
   hint.textContent='You can view this certificate here at any time on this device and save your own PDF copy.';
@@ -2486,7 +2486,7 @@ document.getElementById('issueBtn').addEventListener('click',async()=>{
   saveProgress();
 
   showSavedCertificate();
-  hint.textContent='Your certificate is complete. Save a PDF copy for your own records.';
+  hint.textContent='Save a copy of your certificate for your records and email a copy to jasonm@vistageomatics.com.';
   paint();
   document.getElementById('certificate').scrollIntoView({behavior:'smooth',block:'start'});
 });
