@@ -1448,7 +1448,6 @@ details.stage[open]>.body,details.expander[open]>.body{animation:revealDown .34s
 <div class="btnrow noprint hidden" id="certActions">
 <button class="btn" id="downloadCertBtn" type="button">Save certificate PDF</button>
 <button class="btn ghost" id="printBtn" type="button">Print certificate</button>
-<button class="btn ghost hidden" id="resendCertBtn" type="button">Email certificate again</button>
 <button class="btn ghost" id="restartBtn" type="button">Start the course again</button>
 </div>
 <p class="noprint" id="emailStatus" style="color:var(--steel);font-size:.92rem;margin-top:14px"></p>
@@ -2431,12 +2430,10 @@ async function emailCertificate(force=false){
   if(!state.certificate || (state.certificate.emailSent && !force)) return;
 
   const status=document.getElementById('emailStatus');
-  const resend=document.getElementById('resendCertBtn');
-  if(!status || !resend) return;
+  if(!status) return;
 
   status.style.color='var(--steel)';
   status.textContent='Sending the completion record to the HSE Manager...';
-  resend.classList.add('hidden');
 
   try{
     await formSubmitRecord(force);
@@ -2449,8 +2446,6 @@ async function emailCertificate(force=false){
     console.error('Automatic email failed:',err);
     status.style.color='var(--alarm)';
     status.textContent='Automatic email could not be sent. Select Email certificate again to retry.';
-  }finally{
-    resend.classList.remove('hidden');
   }
 }
 
@@ -2543,8 +2538,6 @@ document.getElementById('downloadCertBtn').addEventListener('click',async()=>{
     btn.textContent=old;
   }
 });
-
-document.getElementById('resendCertBtn').addEventListener('click',()=>emailCertificate(true));
 document.getElementById('printBtn').addEventListener('click',()=>window.print());
 document.getElementById('restartBtn').addEventListener('click',()=>{
   state.visited.clear(); state.quizPassed=false; state.score=0; state.acknowledged=false;
