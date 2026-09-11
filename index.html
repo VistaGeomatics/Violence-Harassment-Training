@@ -2445,7 +2445,7 @@ async function emailCertificate(force=false){
   }catch(err){
     console.error('Automatic email failed:',err);
     status.style.color='var(--alarm)';
-    status.textContent='Automatic email could not be sent. Select Email certificate again to retry.';
+    status.textContent='Automatic email could not be sent. Please contact the HSE Manager.';
   }
 }
 
@@ -2463,10 +2463,9 @@ function showSavedCertificate(){
   document.getElementById('certExpiry').textContent=c.expiry||'—';
   document.getElementById('certificate').classList.remove('hidden');
   document.getElementById('certActions').classList.remove('hidden');
-  document.getElementById('resendCertBtn').classList.remove('hidden');
   const status=document.getElementById('emailStatus');
   status.style.color=c.emailSent?'#2F7A4E':'var(--steel)';
-  status.textContent=c.emailSent ? 'A copy was sent to '+CERT_EMAIL+'.' : 'The certificate has not yet been confirmed as emailed.';
+  status.textContent=c.emailSent ? 'Completion record submitted to '+CERT_EMAIL+'.' : 'The completion record will be emailed automatically when the certificate is issued.';
   const hint=document.getElementById('certHint');
   hint.style.color='var(--steel)';
   hint.textContent='You can view this certificate here at any time on this device and save your own PDF copy.';
