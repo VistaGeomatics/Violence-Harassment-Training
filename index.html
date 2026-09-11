@@ -2360,47 +2360,73 @@ async function saveCertificatePdf(){
   return 'opened';
 }
 
-async function formSubmitRecord(){
-  if(!state.certificate) throw new Error('Certificate information is unavailable.');
+function formSubmitRecord(){
+  return new Promise((resolve,reject)=>{
+    if(!state.certificate) return reject(new Error('Certificate information is unavailable.'));
 
-  const payload={
-    _subject:'Training Completion, '+state.certificate.name+', Violence & Harassment',
-    _template:'table',
-    Employee:state.certificate.name,
-    Role:state.certificate.role||state.employee.role,
-    Division:state.certificate.division||state.employee.division,
-    Course:'Violence & Harassment Training',
-    Completion_Date:state.certificate.date,
-    Score:state.certificate.scoreText,
-    Certificate_Number:state.certificate.id,
-    Valid_Until:state.certificate.expiry,
-    Training_Page:window.location.href
-  };
+    const frameName='vistaCertMailFrame';
+    let frame=document.getElementById(frameName);
 
-  const controller=new AbortController();
-  const timer=setTimeout(()=>controller.abort(),20000);
-
-  try{
-    const res=await fetch('https://formsubmit.co/ajax/'+encodeURIComponent(CERT_EMAIL),{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Accept':'application/json'
-      },
-      body:JSON.stringify(payload),
-      signal:controller.signal
-    });
-
-    const data=await res.json().catch(()=>({}));
-
-    if(!res.ok || data.success===false){
-      throw new Error(data.message||('FormSubmit returned HTTP '+res.status));
+    if(!frame){
+      frame=document.createElement('iframe');
+      frame.id=frameName;
+      frame.name=frameName;
+      frame.style.display='none';
+      document.body.appendChild(frame);
     }
 
-    return data;
-  }finally{
-    clearTimeout(timer);
-  }
+    const form=document.createElement('form');
+    form.method='POST';
+    form.action='https://formsubmit.co/'+CERT_EMAIL;
+    form.target=frameName;
+    form.style.display='none';
+    form.acceptCharset='UTF-8';
+
+    const fields={
+      '_subject':'Training Completion, '+state.certificate.name+', Violence & Harassment',
+      '_template':'table',
+      '_captcha':'false',
+      '_next':window.location.href.split('#')[0],
+      'Employee':state.certificate.name,
+      'Role':state.certificate.role||state.employee.role,
+      'Division':state.certificate.division||state.employee.division,
+      'Course':'Violence & Harassment Training',
+      'Completion Date':state.certificate.date,
+      'Score':state.certificate.scoreText,
+      'Certificate Number':state.certificate.id,
+      'Valid Until':state.certificate.expiry,
+      'Training Page':window.location.href
+    };
+
+    Object.entries(fields).forEach(([name,value])=>{
+      const input=document.createElement('input');
+      input.type='hidden';
+      input.name=name;
+      input.value=value||'';
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+
+    let settled=false;
+    const finish=()=>{
+      if(settled) return;
+      settled=true;
+      try{form.remove();}catch(e){}
+      resolve(true);
+    };
+
+    frame.onload=()=>setTimeout(finish,250);
+
+    try{
+      // This is the same standard FormSubmit POST mechanism that worked with the manual button.
+      form.submit();
+      setTimeout(finish,4000);
+    }catch(err){
+      try{form.remove();}catch(e){}
+      reject(err);
+    }
+  });
 }
 
 async function emailCertificate(force=false){
@@ -2414,17 +2440,16 @@ async function emailCertificate(force=false){
   }
 
   try{
-    const result=await formSubmitRecord();
+    await formSubmitRecord();
     state.certificate.emailSent=true;
-    state.certificate.emailMode='ajax';
+    state.certificate.emailMode='standard-form';
     state.certificate.emailSubmittedAt=new Date().toISOString();
     saveProgress();
 
     if(status){
       status.style.color='#2F7A4E';
-      status.textContent='Completion record accepted by FormSubmit for '+CERT_EMAIL+'.';
+      status.textContent='Completion record submitted to '+CERT_EMAIL+'.';
     }
-    console.log('FormSubmit response:',result);
   }catch(err){
     console.error('Automatic email failed:',err);
     state.certificate.emailSent=false;
@@ -2432,7 +2457,7 @@ async function emailCertificate(force=false){
 
     if(status){
       status.style.color='var(--alarm)';
-      status.textContent='The completion email was not accepted. Please contact the HSE Manager.';
+      status.textContent='The completion email could not be submitted. Please contact the HSE Manager.';
     }
   }
 }
