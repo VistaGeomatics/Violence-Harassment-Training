@@ -2407,10 +2407,11 @@ async function emailCertificate(force=false){
   if(!state.certificate || (state.certificate.emailSent && !force)) return;
 
   const status=document.getElementById('emailStatus');
-  if(!status) return;
 
-  status.style.color='var(--steel)';
-  status.textContent='Sending the completion record to the HSE Manager...';
+  if(status){
+    status.style.color='var(--steel)';
+    status.textContent='Sending the completion record to the HSE Manager...';
+  }
 
   try{
     const result=await formSubmitRecord();
@@ -2419,16 +2420,20 @@ async function emailCertificate(force=false){
     state.certificate.emailSubmittedAt=new Date().toISOString();
     saveProgress();
 
-    status.style.color='#2F7A4E';
-    status.textContent='Completion record accepted by FormSubmit for '+CERT_EMAIL+'.';
+    if(status){
+      status.style.color='#2F7A4E';
+      status.textContent='Completion record accepted by FormSubmit for '+CERT_EMAIL+'.';
+    }
     console.log('FormSubmit response:',result);
   }catch(err){
     console.error('Automatic email failed:',err);
     state.certificate.emailSent=false;
     saveProgress();
 
-    status.style.color='var(--alarm)';
-    status.textContent='The completion email was not accepted. Please contact the HSE Manager.';
+    if(status){
+      status.style.color='var(--alarm)';
+      status.textContent='The completion email was not accepted. Please contact the HSE Manager.';
+    }
   }
 }
 
@@ -2485,12 +2490,17 @@ document.getElementById('issueBtn').addEventListener('click',async()=>{
     employeeSignature:employeeSignatureData
   };
   state.visited.add('cert');
+  saveProgress();
+
+  // Show the completed certificate first, then email it automatically.
   showSavedCertificate();
   hint.textContent='Your certificate is complete. Save a PDF copy for your own records.';
   paint();
-  saveProgress();
   document.getElementById('certificate').scrollIntoView({behavior:'smooth',block:'start'});
-  await emailCertificate();
+
+  // This runs every time a newly signed certificate is issued.
+  // FormSubmit is called directly from the employee's Issue Certificate click.
+  await emailCertificate(true);
 });
 
 document.getElementById('downloadCertBtn').addEventListener('click',async()=>{
